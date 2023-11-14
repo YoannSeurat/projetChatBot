@@ -23,6 +23,8 @@ def cleanSpeeches():
                     s = s[:i] + " " + s[i+1:]
                 elif i != len(s)-1 and s[i] == " " and s[i-1] == " ":
                     s = s[:i-1] + s[i:]
+                elif s[i] == "É":
+                    s = s[:i] + "é" + s[i+1:]
                 else:
                     if 65 <= ord(s[i]) <= 90:
                         s = s[:i] + chr(ord(s[i]) + (97-65)) + s[i+1:]
@@ -42,22 +44,21 @@ def create_dictTFScore(string):
             frequency[word] = 1
     return frequency
 
-def create_dictIDFScore(directory):
-    IDFscores = {}
-    allFiles = list_of_files(directory, ".txt")
-    allWords = {}
-    for filename in allFiles:
-        with open(directory+filename, "r", encoding="utf-8") as file:
-            lines = file.readlines()
-        freq = createDict_TFScore(''.join(lines))
-        for word in freq:
-            if word in allWords:
-                allWords[word] += 1
-            else:
-                allWords[word] = 1
-    for word in allWords:
-        IDFscores[word] = round(log(len(allFiles)/allWords[word]), 2)
-    return IDFscores
+def create_dictIDFScore(directory, filename):
+    IDFscore = {}
+    with open(directory+filename, "r", encoding="utf-8") as file:
+        lines = file.readlines()
+    freq = create_dictTFScore(''.join(lines))
+    for word in freq:
+        IDFscore[word] = round(log(freq[word]), 2)
+    return IDFscore
+
+print(create_dictIDFScore("cleaned\\", "Nomination_Sarkozy.txt"))
 
 def create_matriceTFIDF(directory):
+    allFiles = list_of_files(directory, ".txt")
     
+    matrice = [[0 for j in range(allWords)] for i in range(len(allFiles))] #ligne = document, colonne = mot
+    
+    matriceTransposee = [[matrice[j][i] for j in range(len(matrice))] for i in range(len(matrice[0]))]
+    return matriceTransposee
