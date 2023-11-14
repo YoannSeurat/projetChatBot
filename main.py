@@ -32,7 +32,7 @@ def cleanSpeeches():
             file.write(''.join(finalLines))
     return 'cleaned'
 
-def createDict_frequencyOfWordAppearance(string):
+def create_dictTFScore(string):
     words = string.split()
     frequency = {}
     for word in words:
@@ -42,11 +42,22 @@ def createDict_frequencyOfWordAppearance(string):
             frequency[word] = 1
     return frequency
 
-def createDict_IDFScore(directory):
+def create_dictIDFScore(directory):
     IDFscores = {}
     allFiles = list_of_files(directory, ".txt")
+    allWords = {}
     for filename in allFiles:
         with open(directory+filename, "r", encoding="utf-8") as file:
             lines = file.readlines()
-        
+        freq = createDict_TFScore(''.join(lines))
+        for word in freq:
+            if word in allWords:
+                allWords[word] += 1
+            else:
+                allWords[word] = 1
+    for word in allWords:
+        IDFscores[word] = round(log(len(allFiles)/allWords[word]), 2)
     return IDFscores
+
+def create_matriceTFIDF(directory):
+    
