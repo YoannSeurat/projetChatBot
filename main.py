@@ -48,5 +48,67 @@ def createDict_IDFScore(directory):
     for filename in allFiles:
         with open(directory+filename, "r", encoding="utf-8") as file:
             lines = file.readlines()
-        
-    return IDFscores
+        for w in lines[0].split():
+            if w not in allWords:
+                allWords.append(w)
+
+    matrice = [[0 for j in range(len(allWords))] for i in range(len(allFiles))] #ligne = document, colonne = mot
+    for i in range(len(allFiles)):
+        with open(directory+allFiles[i], "r", encoding="utf-8") as file:
+            lines = file.readlines()
+        freq = create_dictTFScore(''.join(lines))
+        for j in range(len(allWords)):
+            if allWords[j] in freq:
+                matrice[i][j] = round(freq[allWords[j]] * create_dictIDFScore(directory, allFiles[i])[allWords[j]], 2)
+    
+    matriceTransposee = [[matrice[j][i] for j in range(len(matrice))] for i in range(len(matrice[0]))]
+    return matriceTransposee, allWords
+
+def display_matriceTIDF(directory):
+    m, allWords = create_matriceTFIDF_and_allWords(directory)
+    allFiles = list_of_files(directory, ".txt")
+    
+    file = open("matriceTIDF.csv", "w", encoding="utf-8")
+    
+    file.write("Mot;" + ";".join(allFiles) + "\n")
+    for k in range(len(allWords)):
+        file.write(allWords[k] + ";" + ";".join([str(m[k][i]) for i in range(len(m[k]))]) + "\n")
+    file.close()
+    return 0
+
+
+def main():
+    cleanSpeeches()
+    matriceTFIDF, allWords = create_matriceTFIDF_and_allWords("cleaned\\")
+    action = int(input("""Que voulez-vous faire ?
+(0. Quitter)
+1. Afficher les mots les moins importants
+2. Afficher les mots au score TF-IDF le plus élevé
+3. Indiquer les mots les plus répétés par Chirac
+4. Indiquer les noms des présidents qui ont parlé de la « Nation » et celui qui l’a répété le plus de fois
+5. Indiquer le premier président à parler du climat et/ou de l’écologie
+6. Afficher les mots que tous les présidents ont utilisés (hormis non-importants)
+ > """))
+    while action != 0:
+        match action:
+            case 1:
+                for i in range(len(allWords)):
+                    if matriceTFIDF[i] == [0 for _ in range(8)]:
+                        print(allWords[i], end=", ")
+                print("\n")
+            case 2:
+                motsScoreMax = {"": [0 for _ in range(8)]}
+                print(motsScoreMax)
+
+        action = int(input("""Que voulez-vous faire ?
+(0. Quitter)
+1. Afficher les mots les moins importants
+2. Afficher les mots au score TF-IDF le plus élevé
+3. Indiquer les mots les plus répétés par Chirac
+4. Indiquer les noms des présidents qui ont parlé de la « Nation » et celui qui l’a répété le plus de fois
+5. Indiquer le premier président à parler du climat et/ou de l’écologie
+6. Afficher les mots que tous les présidents ont utilisés (hormis non-importants)
+ > """))
+
+if __name__ == "__main__":
+    main()
