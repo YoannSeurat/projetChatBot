@@ -53,12 +53,36 @@ def create_dictIDFScore(directory, filename):
         IDFscore[word] = round(log(freq[word]), 2)
     return IDFscore
 
-print(create_dictIDFScore("cleaned\\", "Nomination_Sarkozy.txt"))
-
-def create_matriceTFIDF(directory):
+def create_matriceTFIDF_and_allWords(directory):
     allFiles = list_of_files(directory, ".txt")
-    
-    matrice = [[0 for j in range(allWords)] for i in range(len(allFiles))] #ligne = document, colonne = mot
+    allWords = []
+    for f in allFiles:
+        with open(directory+f, "r", encoding="utf-8") as file:
+            lines = file.readlines()
+        for w in lines[0].split():
+            if w not in allWords:
+                allWords.append(w)
+
+    matrice = [[0 for j in range(len(allWords))] for i in range(len(allFiles))] #ligne = document, colonne = mot
+    for i in range(len(allFiles)):
+        with open(directory+allFiles[i], "r", encoding="utf-8") as file:
+            lines = file.readlines()
+        freq = create_dictTFScore(''.join(lines))
+        for j in range(len(allWords)):
+            if allWords[j] in freq:
+                matrice[i][j] = round(freq[allWords[j]] * create_dictIDFScore(directory, allFiles[i])[allWords[j]], 2)
     
     matriceTransposee = [[matrice[j][i] for j in range(len(matrice))] for i in range(len(matrice[0]))]
-    return matriceTransposee
+    return matriceTransposee, allWords
+
+def display_matriceTIDF(directory):
+    m, allWords = create_matriceTFIDF_and_allWords(directory)
+    allFiles = list_of_files(directory, ".txt")
+    
+    file = open("matriceTIDF.csv", "w", encoding="utf-8")
+    
+    file.write("Mot;" + ";".join(allFiles) + "\n")
+    for k in range(len(allWords)):
+        file.write(allWords[k] + ";" + ";".join([str(m[k][i]) for i in range(len(m[k]))]) + "\n")
+    file.close()
+    return 0
