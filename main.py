@@ -23,6 +23,8 @@ def cleanSpeeches():
                     s = s[:i] + " " + s[i+1:]
                 elif i != len(s)-1 and s[i] == " " and s[i-1] == " ":
                     s = s[:i-1] + s[i:]
+                elif s[i] == "É":
+                    s = s[:i] + "é" + s[i+1:]
                 else:
                     if 65 <= ord(s[i]) <= 90:
                         s = s[:i] + chr(ord(s[i]) + (97-65)) + s[i+1:]
@@ -32,7 +34,7 @@ def cleanSpeeches():
             file.write(''.join(finalLines))
     return 'cleaned'
 
-def createDict_frequencyOfWordAppearance(string):
+def create_dictTFScore(string):
     words = string.split()
     frequency = {}
     for word in words:
@@ -42,11 +44,20 @@ def createDict_frequencyOfWordAppearance(string):
             frequency[word] = 1
     return frequency
 
-def createDict_IDFScore(directory):
-    IDFscores = {}
+def create_dictIDFScore(directory, filename):
+    IDFscore = {}
+    with open(directory+filename, "r", encoding="utf-8") as file:
+        lines = file.readlines()
+    freq = create_dictTFScore(''.join(lines))
+    for word in freq:
+        IDFscore[word] = round(log(freq[word]), 2)
+    return IDFscore
+
+def create_matriceTFIDF_and_allWords(directory):
     allFiles = list_of_files(directory, ".txt")
-    for filename in allFiles:
-        with open(directory+filename, "r", encoding="utf-8") as file:
+    allWords = []
+    for f in allFiles:
+        with open(directory+f, "r", encoding="utf-8") as file:
             lines = file.readlines()
         for w in lines[0].split():
             if w not in allWords:
@@ -76,7 +87,6 @@ def display_matriceTIDF(directory):
     file.close()
     return 0
 
-
 def main():
     cleanSpeeches()
     matriceTFIDF, allWords = create_matriceTFIDF_and_allWords("cleaned\\")
@@ -97,9 +107,9 @@ def main():
                         print(allWords[i], end=", ")
                 print("\n")
             case 2:
-                motsScoreMax = {"": [0 for _ in range(8)]}
-                print(motsScoreMax)
-
+                motsScoreMax = {str(k): [0 for _ in range(8)] for k in range(5)}
+                
+                
         action = int(input("""Que voulez-vous faire ?
 (0. Quitter)
 1. Afficher les mots les moins importants
