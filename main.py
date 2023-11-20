@@ -107,9 +107,17 @@ def main():
                         print(allWords[i], end=", ")
                 print("\n")
             case 2:
-                motsScoreMax = {str(k): [0 for _ in range(8)] for k in range(5)}
-                
-                
+                motsScoreMax = {str(k): 0 for k in range(6)}
+                for j in range(len(matriceTFIDF)):
+                    scoreTFIDF_moyenne = round(sum(matriceTFIDF[j])/len(matriceTFIDF[j]), 2)
+                    listeValeurs_motsScoreMax = list(motsScoreMax.values())
+                    minimum_listeValeurs_motsScoreMax = min(listeValeurs_motsScoreMax)
+                    if scoreTFIDF_moyenne > minimum_listeValeurs_motsScoreMax:
+                        i = 0
+                        while motsScoreMax[list(motsScoreMax.keys())[i]] >= scoreTFIDF_moyenne:
+                            i += 1
+                        # a completer
+                print(motsScoreMax)
         action = int(input("""Que voulez-vous faire ?
 (0. Quitter)
 1. Afficher les mots les moins importants
