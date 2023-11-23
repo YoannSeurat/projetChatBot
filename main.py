@@ -88,7 +88,6 @@ def display_matriceTIDF(directory):
     return 0
 
 def main():
-    cleanSpeeches()
     matriceTFIDF, allWords = create_matriceTFIDF_and_allWords("cleaned\\")
     action = int(input("""Que voulez-vous faire ?
 (0. Quitter)
@@ -99,6 +98,7 @@ def main():
 5. Indiquer le premier président à parler du climat et/ou de l’écologie
 6. Afficher les mots que tous les présidents ont utilisés (hormis non-importants)
  > """))
+    print()
     while action != 0:
         match action:
             case 1:
@@ -107,18 +107,25 @@ def main():
                         print(allWords[i], end=", ")
                 print("\n")
             case 2:
-                motsScoreMax = {str(k): 0 for k in range(6)}
+                motsScoreMax = {str(k): 0 for k in range(10)}
                 for j in range(len(matriceTFIDF)):
                     scoreTFIDF_moyenne = round(sum(matriceTFIDF[j])/len(matriceTFIDF[j]), 2)
                     listeValeurs_motsScoreMax = list(motsScoreMax.values())
+                    listeCles_motsScoreMax = list(motsScoreMax.keys())
+                    listeItems_motsScoreMax = list(motsScoreMax.items())
                     minimum_listeValeurs_motsScoreMax = min(listeValeurs_motsScoreMax)
                     if scoreTFIDF_moyenne > minimum_listeValeurs_motsScoreMax:
                         i = 0
-                        while motsScoreMax[list(motsScoreMax.keys())[i]] >= scoreTFIDF_moyenne:
-                            i += 1
-                        # a completer
-                print(motsScoreMax)
-        action = int(input("""Que voulez-vous faire ?
+                        while listeValeurs_motsScoreMax[i] >= scoreTFIDF_moyenne:
+                            i += 1    
+                        listeItems_motsScoreMax = listeItems_motsScoreMax[:i] + [(allWords[j], scoreTFIDF_moyenne)] + listeItems_motsScoreMax[i:-1]
+                    motsScoreMax = dict(listeItems_motsScoreMax)
+                
+                print("Les 10 mots au score TF-IDF le plus élevé sont : ", end="")
+                for word in listeCles_motsScoreMax[:-1]:
+                    print(word, end=", ")
+                print(listeCles_motsScoreMax[-1])
+        action = int(input("""\nQue voulez-vous faire ?
 (0. Quitter)
 1. Afficher les mots les moins importants
 2. Afficher les mots au score TF-IDF le plus élevé
@@ -127,6 +134,8 @@ def main():
 5. Indiquer le premier président à parler du climat et/ou de l’écologie
 6. Afficher les mots que tous les présidents ont utilisés (hormis non-importants)
  > """))
+        print()
 
 if __name__ == "__main__":
+    cleanSpeeches()
     main()
