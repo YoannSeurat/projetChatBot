@@ -79,6 +79,7 @@ def create_matriceTFIDF_and_allWords(directory):
                 allWords.append(w)
 
     matrice = [[0 for _ in range(len(allWords))] for __ in range(len(allFiles))] #ligne = document, colonne = mot
+
     for i in range(len(allFiles)):
         with open(directory+allFiles[i], "r", encoding="utf-8") as file:
             lines = file.readlines()
