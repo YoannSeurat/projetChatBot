@@ -13,11 +13,11 @@ https://github.com/YoannSeurat/projetChatBot
  6 fonctions permettant respectivement de
   
 Lister les fichiers d'un répertoire donné
-  Lister les noms des présidents dans un répertoire grâce aux noms des fichiers.
-  Nettoyer les discours du dossier 'speeches' et les enregistrer dans un nouveau dossier 'cleaned'.
-  Créer un dictionnaire contenant les scores TF de chaque mot compris dans un chaîne de caractère.
-  Créer un dictionnaire contenant les scores IDF de chaque mot d'un fichier dans un répertoire donné.
-  Créer une matrice d'un répertoire où chaque ligne correspond à un mot et chaque colonne correspond à un document, ainsi que créer une liste de tous les mots existants dans tous les fichiers.
+  - Lister les noms des présidents dans un répertoire grâce aux noms des fichiers.
+  - Nettoyer les discours du dossier 'speeches' et les enregistrer dans un nouveau dossier 'cleaned'.
+  - Créer un dictionnaire contenant les scores TF de chaque mot compris dans un chaîne de caractère.
+  - Créer un dictionnaire contenant les scores IDF de chaque mot d'un fichier dans un répertoire donné.
+  - Créer une matrice d'un répertoire où chaque ligne correspond à un mot et chaque colonne correspond à un document, ainsi que créer une liste de tous les mots existants dans tous les fichiers.
 
 Une dernière fonction fait usage de programme principal, avec un menu proposant à l'utilisateur plusieurs options pour analyser et étudier les discours des présidents.
 
