@@ -1,5 +1,5 @@
 import os 
-from math import log10
+from math import log10, sqrt
  
 def list_of_files(directory, extension):
     # Retourne la liste des fichiers d'un répertoire d'une certaine extension
@@ -55,15 +55,10 @@ def create_dictTFScore(string):
             frequency[word] = 1
     return frequency
 
-def create_dictIDFScore(directory, filename):
+def create_dictIDFScore(string):
     # Retourne un dictionnaire avec les mots et leur score IDF
-    IDFscore = {}
-    with open(directory+filename, "r", encoding="utf-8") as file:
-        lines = file.readlines()
-    freq = create_dictTFScore(''.join(lines))
-    for word in freq:
-        IDFscore[word] = round(log10(freq[word])+1, 2)
-    return IDFscore
+    freq = create_dictTFScore(string)
+    return {word : round(log10(freq[word])+1, 2) for word in freq}
 
 def create_matriceTFIDF_and_allWords(directory):
     # Retourne un tuple contenant: 
@@ -75,7 +70,7 @@ def create_matriceTFIDF_and_allWords(directory):
         with open(directory+f, "r", encoding="utf-8") as file:
             lines = file.readlines()
         for w in lines[0].split():
-            if w not in allWords and len(w) > 3: # on considere que les mots de moins de 3 lettres sont non-importants
+            if w not in allWords and len(w) > 1: # on considere que les mots d'une lettre sont non-importants
                 allWords.append(w)
 
     matrice = [[0 for _ in range(len(allWords))] for __ in range(len(allFiles))] #ligne = document, colonne = mot
@@ -84,7 +79,7 @@ def create_matriceTFIDF_and_allWords(directory):
         with open(directory+allFiles[i], "r", encoding="utf-8") as file:
             lines = file.readlines()
         freq = create_dictTFScore(''.join(lines))
-        dictIDF = create_dictIDFScore(directory, allFiles[i])
+        dictIDF = create_dictIDFScore(''.join(lines))
         for j in range(len(allWords)):
             if allWords[j] in freq:
                 matrice[i][j] = round(freq[allWords[j]] * dictIDF[allWords[j]], 2)
@@ -92,7 +87,7 @@ def create_matriceTFIDF_and_allWords(directory):
     matriceTransposee = [[matrice[j][i] for j in range(len(matrice))] for i in range(len(matrice[0]))] # ligne = mot, colonne = document
     return matriceTransposee, allWords
 
-def main():
+def partie1():
     actionIsInt = False
     while not(actionIsInt):
         action = input("""\nQue voulez-vous faire ?
@@ -216,6 +211,60 @@ def main():
             if not actionIsInt:
                 print("Veuillez entrer un nombre entier compris entre 0 et 6.\n")
 
+
+
+def listOfWords(string):
+    # Retourne la liste des mots d'une phrase
+    for i in range(len(string)):
+        if not(97 <= ord(string[i]) <= 122 or 65 <= ord(string[i]) <= 90):
+            string = string[:i] + " " + string[i+1:]
+        elif 65 <= ord(string[i]) <= 90:
+            string = string[:i] + chr(ord(string[i]) + (97-65)) + string[i+1:]
+    return string.split()
+
+def listOfCommonElements(list1, list2):
+    # Retourne la liste des éléments communs à deux listes
+    return [e for e in list1 if e in list2]
+
+def vecteurTFIDF(wordsList, allWords):
+    # Retourne le vecteur TF-IDF d'une liste de mots
+    vecteur = [0 for _ in range(len(allWords))]
+    dictTF = create_dictTFScore(' '.join(wordsList))
+    dictIDF = create_dictIDFScore(' '.join(wordsList))
+    for word in wordsList:
+        if word in allWords:
+            vecteur[allWords.index(word)] = round(dictTF[word] * dictIDF[word], 2)
+    return vecteur
+
+def produitScalaire(vecteur1, vecteur2):
+    # Retourne le produit scalaire de deux vecteurs
+    somme = 0
+    for i in range(len(vecteur1)):
+        somme += vecteur1[i] * vecteur2[i]
+    return somme
+
+def norme(vecteur):
+    # Retourne la norme d'un vecteur
+    somme = 0
+    for i in range(len(vecteur)):
+        somme += vecteur[i]**2
+    return round(sqrt(somme), 2)
+
+def similarite(vecteur1, vecteur2):
+    # Retourne la similarité cosinus de deux vecteurs
+    return round(produitScalaire(vecteur1, vecteur2) / (norme(vecteur1) * norme(vecteur2)), 2)
+
+def partie2():
+    question = input("\nVotre question : ")
+    words_in_question = listOfWords(question)
+    matriceTFIDF, allWords = create_matriceTFIDF_and_allWords("cleaned\\")
+    words_in_matrix = listOfCommonElements(allWords, words_in_question)
+    vecteurQuestion = vecteurTFIDF(words_in_question, allWords)
+    matriceTFIDF_transposee = [[matriceTFIDF[j][i] for j in range(len(matriceTFIDF))] for i in range(len(matriceTFIDF[0]))]
+    
+    
+    
 if __name__ == "__main__":
     cleanSpeeches()
-    main()
+    #partie1()
+    partie2()
