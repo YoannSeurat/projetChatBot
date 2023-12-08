@@ -101,7 +101,7 @@ def partie1():
 > """)
         print()
         
-        actionIsInt = (48 <= ord(action) <= 54)
+        actionIsInt = len(action) == 1 and (48 <= ord(action) <= 54)
         if not actionIsInt:
             print("Veuillez entrer un nombre entier compris entre 0 et 6.\n")
     
@@ -207,7 +207,7 @@ def partie1():
 > """)
             print()
             
-            actionIsInt = (48 <= ord(action) <= 54)
+            actionIsInt = len(action) == 1 and (48 <= ord(action) <= 54)
             if not actionIsInt:
                 print("Veuillez entrer un nombre entier compris entre 0 et 6.\n")
 
@@ -254,15 +254,50 @@ def similarite(vecteur1, vecteur2):
     # Retourne la similarité cosinus de deux vecteurs
     return round(produitScalaire(vecteur1, vecteur2) / (norme(vecteur1) * norme(vecteur2)), 2)
 
+def documentLePlusPertinent(vecteur, matrice, fichiers):
+    # Retourne le nom du document le plus pertinent par rapport à un vecteur
+    similarites = []
+    maxi = 0
+    for i in range(len(matrice)):
+        similarites.append(similarite(vecteur, matrice[i]))
+        if similarites[i] > similarites[maxi]:
+            maxi = i
+    return fichiers[maxi]
+
+""" TODO
+def motTFIDFMaximum_dansVecteur(vecteur, mots, allWords):
+    print(vecteur)
+    # Retourne le mot du vecteur qui a le score TF-IDF le plus élevé
+    max_i = 0
+    max_k = 0
+    for i in range(len(vecteur)):
+        if vecteur[i] > vecteur[max_allWords]:
+            max_allWords = allWords.index(mots[i])
+            max_words = i
+        print(i, max_words, vecteur[allWords.index(mots[i])], vecteur[max_allWords], mots[i], mots[max_words])
+    return mots[max_words]
+"""
+
+def phraseDontApparitionMot(mot, repertoire, fichier):
+    # Retourne la premiere phrase d'un fichier dans lequel apparait un mot
+    with open(repertoire+fichier, "r", encoding="utf-8") as file:
+        lines = file.readlines()
+    for line in lines:
+        if mot in line:
+            return line
+    return 'Désolé, je n\'ai pas trouvé de phrase dans laquelle apparaît le mot "' + mot + '".'
+
 def partie2():
     question = input("\nVotre question : ")
     words_in_question = listOfWords(question)
     matriceTFIDF, allWords = create_matriceTFIDF_and_allWords("cleaned\\")
     words_in_matrix = listOfCommonElements(allWords, words_in_question)
     vecteurQuestion = vecteurTFIDF(words_in_question, allWords)
-    matriceTFIDF_transposee = [[matriceTFIDF[j][i] for j in range(len(matriceTFIDF))] for i in range(len(matriceTFIDF[0]))]
-    
-    
+    matriceTFIDF_transposee = [[matriceTFIDF[j][i] for j in range(len(matriceTFIDF))] for i in range(len(matriceTFIDF[0]))] #ligne = document, colonne = mot
+    documentAdapte = documentLePlusPertinent(vecteurQuestion, matriceTFIDF_transposee, list_of_files("cleaned\\", ".txt"))
+    motLePlusPertinent = motTFIDFMaximum_dansVecteur(vecteurQuestion, words_in_matrix, allWords)
+    reponse = phraseDontApparitionMot(motLePlusPertinent, "speeches\\", documentAdapte)
+    print(reponse)
     
 if __name__ == "__main__":
     cleanSpeeches()
