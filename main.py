@@ -1,5 +1,4 @@
-import os 
-import time
+import os, time, random
 from math import log10, sqrt
  
 def list_of_files(directory, extension):
@@ -266,6 +265,10 @@ def phraseDontApparitionMot(mot, repertoire, fichier):
             return line
     return 'Désolé, je n\'ai pas trouvé de phrase dans laquelle apparaît le mot "' + mot + '".'
 
+def questionStarter():
+    # Retourne le début d'une réponse à une question
+    return random.choice(["D'apres mes sources, ", "Selon mes informations, ", "D'apres mes recherches, ", "Selon mes connaissances, ", "Bien sûr, ", "Bien entendu, "])
+
 def partie2():
     question = input("\nVotre question : ")
     words_in_question = listOfWords(question)
@@ -277,14 +280,15 @@ def partie2():
     matriceTFIDF_transposee = [[matriceTFIDF[j][i] for j in range(len(matriceTFIDF))] for i in range(len(matriceTFIDF[0]))] #ligne = document, colonne = mot
     documentAdapte = documentLePlusPertinent(vecteurQuestion, matriceTFIDF_transposee, list_of_files("cleaned\\", ".txt"))
     motLePlusPertinent = motTFIDFMaximum_dansVecteur(vecteurQuestion, allWords)
+    debutReponse = questionStarter()
     reponse = phraseDontApparitionMot(motLePlusPertinent, "speeches\\", documentAdapte)
-    return reponse
+    if 65 <= ord(reponse[0]) <= 90: # supprime la majuscule au debut de "reponse", car "debutReponse" vient avant
+        reponse = chr(ord(reponse[0]) + (97-65)) + reponse[1:]
+    return '\n' + debutReponse + reponse
     
 if __name__ == "__main__":
-    t = time.time()
     cleanSpeeches()
     matriceTFIDF, allWords = create_matriceTFIDF_and_allWords("cleaned\\")
-    print(round(time.time()-t, 2))
     
     action = -1
     while action != 0:
