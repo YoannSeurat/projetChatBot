@@ -1,4 +1,5 @@
 import os 
+import time
 from math import log10, sqrt
  
 def list_of_files(directory, extension):
@@ -27,7 +28,7 @@ def cleanSpeeches():
         for s in lines:
             i = 0
             while i < len(s):
-                if s[i] in [".", ",", "!", "?", ":", ";", "`"] or (i == 0 and s[i] in ["-", " "]): # caractères de ponctuation
+                if s[i] in [".", ",", "!", "?", ":", ";", "`", '"', "’"] or (i == 0 and s[i] in ["-", " "]): # caractères de ponctuation
                     s = s[:i] + s[i+1:]
                 elif s[i] in ["-", "\n", "'"]: # caractères spéciaux a remplacer par un espace
                     s = s[:i] + " " + s[i+1:]
@@ -58,7 +59,7 @@ def create_dictTFScore(string):
 def create_dictIDFScore(string):
     # Retourne un dictionnaire avec les mots et leur score IDF
     freq = create_dictTFScore(string)
-    return {word : round(log10(freq[word])+1, 2) for word in freq}
+    return {word : round(log10(len(string.split()) / freq[word]) + 1, 2) for word in freq}
 
 def create_matriceTFIDF_and_allWords(directory):
     # Retourne un tuple contenant: 
@@ -70,7 +71,7 @@ def create_matriceTFIDF_and_allWords(directory):
         with open(directory+f, "r", encoding="utf-8") as file:
             lines = file.readlines()
         for w in lines[0].split():
-            if w not in allWords and len(w) > 1: # on considere que les mots d'une lettre sont non-importants
+            if w not in allWords and len(w) > 3: # on considere que les mots de trois lettres sont non-importants
                 allWords.append(w)
 
     matrice = [[0 for _ in range(len(allWords))] for __ in range(len(allFiles))] #ligne = document, colonne = mot
@@ -87,10 +88,10 @@ def create_matriceTFIDF_and_allWords(directory):
     matriceTransposee = [[matrice[j][i] for j in range(len(matrice))] for i in range(len(matrice[0]))] # ligne = mot, colonne = document
     return matriceTransposee, allWords
 
-def partie1():
-    actionIsInt = False
-    while not(actionIsInt):
-        action = input("""\nQue voulez-vous faire ?
+def partie1(matriceTFIDF, allWords):
+    optionIsInt = False
+    while not(optionIsInt):
+        option = input("""\nQue voulez-vous faire ?
 (0. Quitter)
 1. Afficher les mots les moins importants
 2. Afficher les mots au score TF-IDF le plus élevé
@@ -101,115 +102,97 @@ def partie1():
 > """)
         print()
         
-        actionIsInt = len(action) == 1 and (48 <= ord(action) <= 54)
-        if not actionIsInt:
+        optionIsInt = len(option) == 1 and (48 <= ord(option) <= 54)
+        if not optionIsInt:
             print("Veuillez entrer un nombre entier compris entre 0 et 6.\n")
     
-    action = int(action)
-    matriceTFIDF, allWords = create_matriceTFIDF_and_allWords("cleaned\\")
+    option = int(option)
     unsortedPresidents = list_of_presidents("speeches\\")
     
-    while action != 0:
-        match action:
-            case 1: # Afficher les mots les moins importants
-                print("Les mots les moins importants sont :")
-                for i in range(len(allWords)):
-                    if not(False in [matriceTFIDF[i][k] in [0, 1] for k in range(len(matriceTFIDF[i]))]): # remplit la condition seulement si tous les éléments de la ligne sont 0 ou 1
-                        print(allWords[i], end=", ")
-                print()
-                
-            case 2: # Afficher les mots au score TF-IDF le plus élevé
-                motsScoreMax = {str(k): 0 for k in range(10)}
-                for j in range(len(matriceTFIDF)):
-                    scoreTFIDF_moyenne = round(sum(matriceTFIDF[j])/len(matriceTFIDF[j]), 2)
-                    listeValeurs_motsScoreMax = list(motsScoreMax.values())
-                    listeCles_motsScoreMax = list(motsScoreMax.keys())
-                    listeItems_motsScoreMax = list(motsScoreMax.items())
-                    if scoreTFIDF_moyenne > min(listeValeurs_motsScoreMax):
-                        i = 0
-                        while listeValeurs_motsScoreMax[i] >= scoreTFIDF_moyenne:
-                            i += 1    
-                        listeItems_motsScoreMax = listeItems_motsScoreMax[:i] + [(allWords[j], scoreTFIDF_moyenne)] + listeItems_motsScoreMax[i:-1]
-                    motsScoreMax = dict(listeItems_motsScoreMax)
-                
-                print("Les 10 mots au score TF-IDF le plus élevé sont : ", end="")
-                for word in listeCles_motsScoreMax[:-1]:
-                    print(word, end=", ")
-                print(listeCles_motsScoreMax[-1])
-                
-            case 3: # Indiquer les mots les plus répétés par Chirac
-                motsChirac = {str(k): 0 for k in range(10)}
-                
-                for j in range(len(matriceTFIDF)):
-                    scoreTFIDF_moyenne = round((matriceTFIDF[j][1]+matriceTFIDF[j][2])/2, 2)
-                    listeValeurs_motsChirac = list(motsChirac.values())
-                    listeCles_motsChirac = list(motsChirac.keys())
-                    listeItems_motsChirac = list(motsChirac.items())
-                    if scoreTFIDF_moyenne > min(listeValeurs_motsChirac):
-                        i = 0
-                        while listeValeurs_motsChirac[i] >= scoreTFIDF_moyenne:
-                            i += 1    
-                        listeItems_motsChirac = listeItems_motsChirac[:i] + [(allWords[j], scoreTFIDF_moyenne)] + listeItems_motsChirac[i:-1]
-                    motsChirac = dict(listeItems_motsChirac)
-                
-                print("Les 10 mots les plus répétés par Chirac sont : ", end="")
-                for word in listeCles_motsChirac[:-1]:
-                    print(word, end=", ")
-                print(listeCles_motsChirac[-1])
-            
-            case 4: # Indiquer les noms des présidents qui ont parlé de la « Nation » et celui qui l’a répété le plus de fois
-                presidentsNation = []
-                maxi = 0
-                ligneMatriceNation = matriceTFIDF[allWords.index("nation")]
-                for i in range(len(ligneMatriceNation)):
-                    if ligneMatriceNation[i] != 0 and unsortedPresidents[i] not in presidentsNation:
-                        presidentsNation.append(unsortedPresidents[i])
-                    if ligneMatriceNation[i] > ligneMatriceNation[maxi]:
-                        maxi = i
-                
-                print("Les présidents qui ont parlé de la « Nation » sont :", ', '.join(presidentsNation))
-                print("Celui qui l'a le plus répété est", unsortedPresidents[maxi])
-            
-            case 5: # Indiquer le premier président à parler du climat et/ou de l’écologie
-                chronologiePresidents = ['Giscard dEstaing', 'Mitterrand', 'Chirac', 'Sarkozy', 'Hollande', 'Macron']
-                ligneMatriceClimat = matriceTFIDF[allWords.index("climat")]
-                ligneMatriceEcologie = matriceTFIDF[allWords.index("écologique")] # car le mot "écologie" n'est jamais mentionné
-                
-                presidentsVert = []
-                
-                for i in range(len(ligneMatriceClimat)):
-                    if (unsortedPresidents[i] not in presidentsVert) and (ligneMatriceEcologie[i] != 0 or ligneMatriceClimat[i] != 0):
-                        presidentsVert.append(unsortedPresidents[i])
-
-                i = 0
-                while i < len(chronologiePresidents) and chronologiePresidents[i] not in presidentsVert:
-                    i += 1 # parcourt la liste chronologique des présidents jusqu'à trouver le premier qui a parlé du climat
-                print("Le premier président à parler du climat et/ou de l'écologie est", chronologiePresidents[i])
-                
-            case 6: # Afficher les mots que tous les présidents ont utilisés
-                print("Les mots que tous les présidents ont utilisés sont : ", end="")
-                for i in range(len(matriceTFIDF)):
-                    nouvelleLigneMatrice = [matriceTFIDF[i][0]+matriceTFIDF[i][1], matriceTFIDF[i][2], matriceTFIDF[i][3], matriceTFIDF[i][4], matriceTFIDF[i][5]+matriceTFIDF[i][6], matriceTFIDF[i][7]] # on regroupe les discours de Giscard et de Mitterrand
-                    if not(0 in nouvelleLigneMatrice):
-                        print(allWords[i], end=", ")
-                print()
-                    
-        actionIsInt = False
-        while not(actionIsInt):
-            action = input("""\nQue voulez-vous faire ?
-(0. Quitter)
-1. Afficher les mots les moins importants
-2. Afficher les mots au score TF-IDF le plus élevé
-3. Indiquer les mots les plus répétés par Chirac
-4. Indiquer les noms des présidents qui ont parlé de la « Nation » et celui qui l’a répété le plus de fois
-5. Indiquer le premier président à parler du climat et/ou de l’écologie
-6. Afficher les mots que tous les présidents ont utilisés (hormis non-importants)
-> """)
+    match option:
+        case 1: # Afficher les mots les moins importants
+            print("Les mots les moins importants sont :")
+            for i in range(len(allWords)):
+                if not(False in [matriceTFIDF[i][k] < 4 for k in range(len(matriceTFIDF[i]))]): # remplit la condition seulement si tous les éléments de la ligne sont inférieurs à 3
+                    print(allWords[i], end=", ")
             print()
             
-            actionIsInt = len(action) == 1 and (48 <= ord(action) <= 54)
-            if not actionIsInt:
-                print("Veuillez entrer un nombre entier compris entre 0 et 6.\n")
+        case 2: # Afficher les mots au score TF-IDF le plus élevé
+            motsScoreMax = {str(k): 0 for k in range(10)}
+            for j in range(len(matriceTFIDF)):
+                scoreTFIDF_moyenne = round(sum(matriceTFIDF[j])/len(matriceTFIDF[j]), 2)
+                listeValeurs_motsScoreMax = list(motsScoreMax.values())
+                listeCles_motsScoreMax = list(motsScoreMax.keys())
+                listeItems_motsScoreMax = list(motsScoreMax.items())
+                if scoreTFIDF_moyenne > min(listeValeurs_motsScoreMax):
+                    i = 0
+                    while listeValeurs_motsScoreMax[i] >= scoreTFIDF_moyenne:
+                        i += 1    
+                    listeItems_motsScoreMax = listeItems_motsScoreMax[:i] + [(allWords[j], scoreTFIDF_moyenne)] + listeItems_motsScoreMax[i:-1]
+                motsScoreMax = dict(listeItems_motsScoreMax)
+            
+            print("Les 10 mots au score TF-IDF le plus élevé sont : ", end="")
+            for word in listeCles_motsScoreMax[:-1]:
+                print(word, end=", ")
+            print(listeCles_motsScoreMax[-1])
+            
+        case 3: # Indiquer les mots les plus répétés par Chirac
+            motsChirac = {str(k): 0 for k in range(10)}
+            
+            for j in range(len(matriceTFIDF)):
+                scoreTFIDF_moyenne = round((matriceTFIDF[j][1]+matriceTFIDF[j][2])/2, 2)
+                listeValeurs_motsChirac = list(motsChirac.values())
+                listeCles_motsChirac = list(motsChirac.keys())
+                listeItems_motsChirac = list(motsChirac.items())
+                if scoreTFIDF_moyenne > min(listeValeurs_motsChirac):
+                    i = 0
+                    while listeValeurs_motsChirac[i] >= scoreTFIDF_moyenne:
+                        i += 1    
+                    listeItems_motsChirac = listeItems_motsChirac[:i] + [(allWords[j], scoreTFIDF_moyenne)] + listeItems_motsChirac[i:-1]
+                motsChirac = dict(listeItems_motsChirac)
+            
+            print("Les 10 mots les plus répétés par Chirac sont : ", end="")
+            for word in listeCles_motsChirac[:-1]:
+                print(word, end=", ")
+            print(listeCles_motsChirac[-1])
+        
+        case 4: # Indiquer les noms des présidents qui ont parlé de la « Nation » et celui qui l’a répété le plus de fois
+            presidentsNation = []
+            maxi = 0
+            ligneMatriceNation = matriceTFIDF[allWords.index("nation")]
+            for i in range(len(ligneMatriceNation)):
+                if ligneMatriceNation[i] != 0 and unsortedPresidents[i] not in presidentsNation:
+                    presidentsNation.append(unsortedPresidents[i])
+                if ligneMatriceNation[i] > ligneMatriceNation[maxi]:
+                    maxi = i
+            
+            print("Les présidents qui ont parlé de la « Nation » sont :", ', '.join(presidentsNation))
+            print("Celui qui l'a le plus répété est", unsortedPresidents[maxi])
+        
+        case 5: # Indiquer le premier président à parler du climat et/ou de l’écologie
+            chronologiePresidents = ['Giscard dEstaing', 'Mitterrand', 'Chirac', 'Sarkozy', 'Hollande', 'Macron']
+            ligneMatriceClimat = matriceTFIDF[allWords.index("climat")]
+            ligneMatriceEcologie = matriceTFIDF[allWords.index("écologique")] # car le mot "écologie" n'est jamais mentionné
+            
+            presidentsVert = []
+            
+            for i in range(len(ligneMatriceClimat)):
+                if (unsortedPresidents[i] not in presidentsVert) and (ligneMatriceEcologie[i] != 0 or ligneMatriceClimat[i] != 0):
+                    presidentsVert.append(unsortedPresidents[i])
+
+            i = 0
+            while i < len(chronologiePresidents) and chronologiePresidents[i] not in presidentsVert:
+                i += 1 # parcourt la liste chronologique des présidents jusqu'à trouver le premier qui a parlé du climat
+            print("Le premier président à parler du climat et/ou de l'écologie est", chronologiePresidents[i])
+            
+        case 6: # Afficher les mots que tous les présidents ont utilisés
+            print("Les mots que tous les présidents ont utilisés sont : ", end="")
+            for i in range(len(matriceTFIDF)):
+                nouvelleLigneMatrice = [matriceTFIDF[i][0]+matriceTFIDF[i][1], matriceTFIDF[i][2], matriceTFIDF[i][3], matriceTFIDF[i][4], matriceTFIDF[i][5]+matriceTFIDF[i][6], matriceTFIDF[i][7]] # on regroupe les discours de Giscard et de Mitterrand
+                if not(0 in nouvelleLigneMatrice):
+                    print(allWords[i], end=", ")
+            print()
+        
 
 
 
@@ -264,26 +247,22 @@ def documentLePlusPertinent(vecteur, matrice, fichiers):
             maxi = i
     return fichiers[maxi]
 
-""" TODO
-def motTFIDFMaximum_dansVecteur(vecteur, mots, allWords):
-    print(vecteur)
+
+def motTFIDFMaximum_dansVecteur(vecteur, allWords):
     # Retourne le mot du vecteur qui a le score TF-IDF le plus élevé
-    max_i = 0
-    max_k = 0
+    max_index = 0
     for i in range(len(vecteur)):
-        if vecteur[i] > vecteur[max_allWords]:
-            max_allWords = allWords.index(mots[i])
-            max_words = i
-        print(i, max_words, vecteur[allWords.index(mots[i])], vecteur[max_allWords], mots[i], mots[max_words])
-    return mots[max_words]
-"""
+        if vecteur[i] > vecteur[max_index]:
+            max_index = i
+    return allWords[max_index]
+
 
 def phraseDontApparitionMot(mot, repertoire, fichier):
     # Retourne la premiere phrase d'un fichier dans lequel apparait un mot
     with open(repertoire+fichier, "r", encoding="utf-8") as file:
         lines = file.readlines()
     for line in lines:
-        if mot in line:
+        if mot in line.lower():
             return line
     return 'Désolé, je n\'ai pas trouvé de phrase dans laquelle apparaît le mot "' + mot + '".'
 
@@ -292,14 +271,32 @@ def partie2():
     words_in_question = listOfWords(question)
     matriceTFIDF, allWords = create_matriceTFIDF_and_allWords("cleaned\\")
     words_in_matrix = listOfCommonElements(allWords, words_in_question)
+    if words_in_matrix == []: # aucun mot de la question n'est dans la matrice
+        return "Désolé, aucun document ne correspond à votre question."        
     vecteurQuestion = vecteurTFIDF(words_in_question, allWords)
     matriceTFIDF_transposee = [[matriceTFIDF[j][i] for j in range(len(matriceTFIDF))] for i in range(len(matriceTFIDF[0]))] #ligne = document, colonne = mot
     documentAdapte = documentLePlusPertinent(vecteurQuestion, matriceTFIDF_transposee, list_of_files("cleaned\\", ".txt"))
-    motLePlusPertinent = motTFIDFMaximum_dansVecteur(vecteurQuestion, words_in_matrix, allWords)
+    motLePlusPertinent = motTFIDFMaximum_dansVecteur(vecteurQuestion, allWords)
     reponse = phraseDontApparitionMot(motLePlusPertinent, "speeches\\", documentAdapte)
-    print(reponse)
+    return reponse
     
 if __name__ == "__main__":
+    t = time.time()
     cleanSpeeches()
-    #partie1()
-    partie2()
+    matriceTFIDF, allWords = create_matriceTFIDF_and_allWords("cleaned\\")
+    print(round(time.time()-t, 2))
+    
+    action = -1
+    while action != 0:
+        actionIsInt = False
+        while not actionIsInt:
+            action = input("\nQuelle partie voulez-vous lancer ? (1 ou 2, 0 pour quitter) :\n > ")
+            actionIsInt = len(action) == 1 and (48 <= ord(action) <= 51)
+            if not actionIsInt:
+                print("Veuillez entrer un nombre entier compris entre 0 et 2.\n")
+        action = int(action)
+        
+        if action == 1:
+            partie1(matriceTFIDF, allWords)
+        elif action == 2: # pas un else car action peut etre 0
+            print(partie2())
