@@ -49,10 +49,9 @@ def create_dictTFScore(string):
     words = string.split()
     frequency = {}
     for word in words:
-        if word in frequency:
-            frequency[word] += 1
-        else:
-            frequency[word] = 1
+        if word not in frequency:
+            frequency[word] = 0
+        frequency[word] += 1
     return frequency
 
 def create_dictIDFScore(string):
@@ -208,14 +207,17 @@ def listOfCommonElements(list1, list2):
     # Retourne la liste des éléments communs à deux listes
     return [e for e in list1 if e in list2]
 
-def vecteurTFIDF(wordsList, allWords):
+def vecteurTFIDF(matriceTFIDF, wordsList, question, allWords):
     # Retourne le vecteur TF-IDF d'une liste de mots
     vecteur = [0 for _ in range(len(allWords))]
-    dictTF = create_dictTFScore(' '.join(wordsList))
-    dictIDF = create_dictIDFScore(' '.join(wordsList))
-    for word in wordsList:
-        if word in allWords:
-            vecteur[allWords.index(word)] = round(dictTF[word] * dictIDF[word], 2)
+    freq = create_dictTFScore(question)
+    k = 0
+    i = 0
+    while k < len(wordsList):
+        if allWords[i] == wordsList[k]:
+            vecteur[i] = round(freq[wordsList[k]] * sum(matriceTFIDF[i]) / len(matriceTFIDF[i]), 2)
+            k += 1
+        i += 1
     return vecteur
 
 def produitScalaire(vecteur1, vecteur2):
@@ -246,7 +248,6 @@ def documentLePlusPertinent(vecteur, matrice, fichiers):
             maxi = i
     return fichiers[maxi]
 
-
 def motTFIDFMaximum_dansVecteur(vecteur, allWords):
     # Retourne le mot du vecteur qui a le score TF-IDF le plus élevé
     max_index = 0
@@ -255,28 +256,26 @@ def motTFIDFMaximum_dansVecteur(vecteur, allWords):
             max_index = i
     return allWords[max_index]
 
-
 def phraseDontApparitionMot(mot, repertoire, fichier):
     # Retourne la premiere phrase d'un fichier dans lequel apparait un mot
     with open(repertoire+fichier, "r", encoding="utf-8") as file:
         lines = file.readlines()
     for line in lines:
-        if mot in line.lower():
+        if ' ' + mot + ' ' in line.lower():
             return line
     return 'Désolé, je n\'ai pas trouvé de phrase dans laquelle apparaît le mot "' + mot + '".'
 
 def questionStarter():
     # Retourne le début d'une réponse à une question
-    return random.choice(["D'apres mes sources, ", "Selon mes informations, ", "D'apres mes recherches, ", "Selon mes connaissances, ", "Bien sûr, ", "Bien entendu, "])
+    return random.choice(["D'après mes sources, ", "Selon mes informations, ", "D'après mes recherches, ", "Selon mes connaissances, ", "Bien sûr, ", "Bien entendu, "])
 
-def partie2():
+def partie2(matriceTFIDF, allWords):
     question = input("\nVotre question : ")
     words_in_question = listOfWords(question)
-    matriceTFIDF, allWords = create_matriceTFIDF_and_allWords("cleaned\\")
     words_in_matrix = listOfCommonElements(allWords, words_in_question)
     if words_in_matrix == []: # aucun mot de la question n'est dans la matrice
         return "Désolé, aucun document ne correspond à votre question."        
-    vecteurQuestion = vecteurTFIDF(words_in_question, allWords)
+    vecteurQuestion = vecteurTFIDF(matriceTFIDF, words_in_matrix, question, allWords)
     matriceTFIDF_transposee = [[matriceTFIDF[j][i] for j in range(len(matriceTFIDF))] for i in range(len(matriceTFIDF[0]))] #ligne = document, colonne = mot
     documentAdapte = documentLePlusPertinent(vecteurQuestion, matriceTFIDF_transposee, list_of_files("cleaned\\", ".txt"))
     motLePlusPertinent = motTFIDFMaximum_dansVecteur(vecteurQuestion, allWords)
@@ -284,10 +283,11 @@ def partie2():
     reponse = phraseDontApparitionMot(motLePlusPertinent, "speeches\\", documentAdapte)
     if 65 <= ord(reponse[0]) <= 90: # supprime la majuscule au debut de "reponse", car "debutReponse" vient avant
         reponse = chr(ord(reponse[0]) + (97-65)) + reponse[1:]
-    return '\n' + debutReponse + reponse
-    
+    return debutReponse + reponse
+
 if __name__ == "__main__":
     cleanSpeeches()
+    display_matriceTFIDF("cleaned\\")
     matriceTFIDF, allWords = create_matriceTFIDF_and_allWords("cleaned\\")
     
     action = -1
@@ -303,4 +303,4 @@ if __name__ == "__main__":
         if action == 1:
             partie1(matriceTFIDF, allWords)
         elif action == 2: # pas un else car action peut etre 0
-            print(partie2())
+            print('\n', partie2(matriceTFIDF, allWords))
