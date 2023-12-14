@@ -1,9 +1,11 @@
-import os, time, random
 from math import log10, sqrt
+from os import listdir
+from time import time
+from random import choice
  
 def list_of_files(directory, extension):
     # Retourne la liste des fichiers d'un répertoire d'une certaine extension
-    return [filename for filename in os.listdir(directory) if filename.endswith(extension)] 
+    return [filename for filename in listdir(directory) if filename.endswith(extension)] 
 
 def list_of_presidents(directory):
     # Retourne la liste des présidents
@@ -27,12 +29,13 @@ def cleanSpeeches():
         for s in lines:
             i = 0
             while i < len(s):
-                if s[i] in [".", ",", "!", "?", ":", ";", "`", '"', "’"] or (i == 0 and s[i] in ["-", " "]): # caractères de ponctuation
-                    s = s[:i] + s[i+1:]
-                elif s[i] in ["-", "\n", "'"]: # caractères spéciaux a remplacer par un espace
+                if s[i] in ["-", "\n", "'", " "]: # caractères spéciaux a remplacer par un espace
                     s = s[:i] + " " + s[i+1:]
+                    i += 1
                 elif i != len(s)-1 and s[i-1:i+1] == "  ": # 2 espaces consécutifs
                     s = s[:i-1] + s[i:]
+                elif not (65 <= ord(s[i]) <= 90 or 97 <= ord(s[i]) <= 122) and s[i] not in ["ç", "é", "è", "ê", "à", "â", "û", "Ç", "É", "È", "À", "Â"]: # autres caractères spéciaux
+                    s = s[:i] + s[i+1:]
                 else: # s[i] est une lettre
                     if 65 <= ord(s[i]) <= 90: # majuscule
                         s = s[:i] + chr(ord(s[i]) + (97-65)) + s[i+1:]
@@ -46,6 +49,11 @@ def cleanSpeeches():
 
 def create_dictTFScore(string):
     # Retourne un dictionnaire avec les mots et leur fréquence d'apparition (score TF)
+    for i in range(len(string)):
+        if not(97 <= ord(string[i]) <= 122 or 65 <= ord(string[i]) <= 90) and string[i] not in ["ç", "é", "è", "ê", "à", "â", "û"]:
+            string = string[:i] + " " + string[i+1:]
+        elif 65 <= ord(string[i]) <= 90:
+            string = string[:i] + chr(ord(string[i]) + (97-65)) + string[i+1:]
     words = string.split()
     frequency = {}
     for word in words:
@@ -67,9 +75,9 @@ def create_matriceTFIDF_and_allWords(directory):
     allWords = []
     for f in allFiles: #creation de la liste allWords
         with open(directory+f, "r", encoding="utf-8") as file:
-            lines = file.readlines()
-        for w in lines[0].split():
-            if w not in allWords and len(w) > 3: # on considere que les mots de trois lettres sont non-importants
+            lines = file.read()
+        for w in lines.split():
+            if w not in allWords and len(w) > 3: # on considere que les mots de trois lettres ou moins sont non-importants
                 allWords.append(w)
 
     matrice = [[0 for _ in range(len(allWords))] for __ in range(len(allFiles))] #ligne = document, colonne = mot
@@ -197,11 +205,11 @@ def partie1(matriceTFIDF, allWords):
 def listOfWords(string):
     # Retourne la liste des mots d'une phrase
     for i in range(len(string)):
-        if not(97 <= ord(string[i]) <= 122 or 65 <= ord(string[i]) <= 90):
+        if not(97 <= ord(string[i]) <= 122 or 65 <= ord(string[i]) <= 90) and string[i] not in ["ç", "é", "è", "ê", "à", "â", "û"]:
             string = string[:i] + " " + string[i+1:]
         elif 65 <= ord(string[i]) <= 90:
             string = string[:i] + chr(ord(string[i]) + (97-65)) + string[i+1:]
-    return string.split()
+    return string.split(' ')
 
 def listOfCommonElements(list1, list2):
     # Retourne la liste des éléments communs à deux listes
@@ -211,12 +219,12 @@ def vecteurTFIDF(matriceTFIDF, wordsList, question, allWords):
     # Retourne le vecteur TF-IDF d'une liste de mots
     vecteur = [0 for _ in range(len(allWords))]
     freq = create_dictTFScore(question)
-    k = 0
+    wordsFound = 0
     i = 0
-    while k < len(wordsList):
-        if allWords[i] == wordsList[k]:
-            vecteur[i] = round(freq[wordsList[k]] * sum(matriceTFIDF[i]) / len(matriceTFIDF[i]), 2)
-            k += 1
+    while wordsFound < len(wordsList):
+        if allWords[i] in wordsList:
+            vecteur[i] = round(freq[allWords[i]] * sum(matriceTFIDF[i]) / len(matriceTFIDF[i]), 2)
+            wordsFound += 1
         i += 1
     return vecteur
 
@@ -248,13 +256,13 @@ def documentLePlusPertinent(vecteur, matrice, fichiers):
             maxi = i
     return fichiers[maxi]
 
-def motTFIDFMaximum_dansVecteur(vecteur, allWords):
+def indice_motTFIDFMaximumDansVecteur(vecteur):
     # Retourne le mot du vecteur qui a le score TF-IDF le plus élevé
     max_index = 0
     for i in range(len(vecteur)):
         if vecteur[i] > vecteur[max_index]:
             max_index = i
-    return allWords[max_index]
+    return max_index
 
 def phraseDontApparitionMot(mot, repertoire, fichier):
     # Retourne la premiere phrase d'un fichier dans lequel apparait un mot
@@ -263,31 +271,32 @@ def phraseDontApparitionMot(mot, repertoire, fichier):
     for line in lines:
         if ' ' + mot + ' ' in line.lower():
             return line
-    return 'Désolé, je n\'ai pas trouvé de phrase dans laquelle apparaît le mot "' + mot + '".'
+    return ''
 
 def questionStarter():
     # Retourne le début d'une réponse à une question
-    return random.choice(["D'après mes sources, ", "Selon mes informations, ", "D'après mes recherches, ", "Selon mes connaissances, ", "Bien sûr, ", "Bien entendu, "])
+    return choice(["D'après mes sources, ", "Selon mes informations, ", "D'après mes recherches, ", "Selon mes connaissances, ", "Bien sûr, ", "Bien entendu, "])
 
 def partie2(matriceTFIDF, allWords):
     question = input("\nVotre question : ")
     words_in_question = listOfWords(question)
-    words_in_matrix = listOfCommonElements(allWords, words_in_question)
+    words_in_matrix = listOfCommonElements(words_in_question, allWords)
     if words_in_matrix == []: # aucun mot de la question n'est dans la matrice
         return "Désolé, aucun document ne correspond à votre question."        
     vecteurQuestion = vecteurTFIDF(matriceTFIDF, words_in_matrix, question, allWords)
     matriceTFIDF_transposee = [[matriceTFIDF[j][i] for j in range(len(matriceTFIDF))] for i in range(len(matriceTFIDF[0]))] #ligne = document, colonne = mot
     documentAdapte = documentLePlusPertinent(vecteurQuestion, matriceTFIDF_transposee, list_of_files("cleaned\\", ".txt"))
-    motLePlusPertinent = motTFIDFMaximum_dansVecteur(vecteurQuestion, allWords)
+    motLePlusPertinent = allWords[indice_motTFIDFMaximumDansVecteur(vecteurQuestion)]
     debutReponse = questionStarter()
     reponse = phraseDontApparitionMot(motLePlusPertinent, "speeches\\", documentAdapte)
+    if reponse == '':
+        return 'Désolé, je n\'ai pas trouvé de phrase dans laquelle apparaît le mot "' + mot + '".'
     if 65 <= ord(reponse[0]) <= 90: # supprime la majuscule au debut de "reponse", car "debutReponse" vient avant
         reponse = chr(ord(reponse[0]) + (97-65)) + reponse[1:]
     return debutReponse + reponse
 
 if __name__ == "__main__":
     cleanSpeeches()
-    display_matriceTFIDF("cleaned\\")
     matriceTFIDF, allWords = create_matriceTFIDF_and_allWords("cleaned\\")
     
     action = -1
