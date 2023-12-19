@@ -1,4 +1,4 @@
-##Projet ChatBot Partie 1
+Projet ChatBot Partie 1
 
 Équipe : Yoann Seurat, Tessert Kouzessa
 
@@ -6,10 +6,10 @@ Groupe BDX
 
 Lien vers le dépôt Git :
 https://github.com/YoannSeurat/projetChatBot
-  
+
 ---------
 
-#Fonctionnalités principales :
+Fonctionnalités principales :
 
 7 fonctions (liées à la partie 1 du projet) permettant respectivement de
 •	Lister les fichiers d'un répertoire donné
@@ -35,7 +35,7 @@ Puis 11 fonctions (en lien avec la partie 2) permettant de:
 
 ----------
 
-#Instructions d'éxécution du code :
+Instructions d'éxécution du code :
 
   Après avoir lancé le programme, choisir une des options du menu en tapant un chiffre entier compris entre 0 et 2.
   L'option 1 vous amènera vers le programme de la partie 1:
